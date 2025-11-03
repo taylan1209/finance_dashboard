@@ -257,47 +257,43 @@ export default function Dashboard({ user }: DashboardProps) {
                 </div>
                 <Activity className="h-5 w-5 text-cyan-300" />
               </div>
-              <div className="flex h-64 flex-col gap-6 md:flex-row md:items-center">
-                <div className="flex-1">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RadialBarChart
-                      cx="46%"
-                      cy="50%"
-                      innerRadius="28%"
-                      outerRadius="100%"
-                      data={liquidityPulse}
-                      startAngle={90}
-                      endAngle={-270}
-                    >
-                      <RadialBar dataKey="value" cornerRadius={14} background clockWise />
-                      <Tooltip
-                        contentStyle={{
-                          background: "#020617",
-                          borderRadius: 16,
-                          border: "1px solid rgba(148,163,184,0.2)",
-                          color: "#e2e8f0",
-                        }}
-                        formatter={(value: number) => [`${value}%`, "Share"]}
-                      />
-                    </RadialBarChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="grid flex-none gap-3 rounded-2xl border border-white/5 bg-white/5 p-4 text-xs text-slate-200 md:w-52">
-                  {liquidityPulse.map((bucket) => (
-                    <div key={bucket.name} className="flex items-center gap-3">
-                      <span
-                        className="h-2.5 w-2.5 rounded-full"
-                        style={{ backgroundColor: bucket.fill }}
-                      />
-                      <div className="space-y-1">
-                        <div className="text-sm font-semibold text-white">{bucket.name}</div>
-                        <div className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
-                          {bucket.value}% allocation
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadialBarChart
+                    cx="35%"
+                    cy="50%"
+                    innerRadius="28%"
+                    outerRadius="90%"
+                    data={liquidityPulse}
+                    startAngle={90}
+                    endAngle={-270}
+                    margin={{ right: 110 }}
+                  >
+                    <RadialBar dataKey="value" cornerRadius={12} background clockWise />
+                    <Legend
+                      layout="vertical"
+                      verticalAlign="middle"
+                      align="right"
+                      iconSize={10}
+                      wrapperStyle={{
+                        fontSize: 12,
+                        color: "#cbd5f5",
+                        lineHeight: 1.6,
+                        paddingLeft: 16,
+                      }}
+                      formatter={(value: string, entry) => `${value} · ${entry.payload.value}%`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        background: "#020617",
+                        borderRadius: 16,
+                        border: "1px solid rgba(148,163,184,0.2)",
+                        color: "#e2e8f0",
+                      }}
+                      formatter={(value: number) => [`${value}%`, "Allocation"]}
+                    />
+                  </RadialBarChart>
+                </ResponsiveContainer>
               </div>
             </div>
 
