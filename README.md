@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Aurora Finance Intelligence Dashboard
+
+An executive-grade, single-page financial operations cockpit built with **Next.js 16** and the App Router. The experience starts with a secured login hand-off and unveils a richly instrumented command center featuring live-style cards, animated charts, and synthetic enterprise data.
+
+## Highlights
+- **Immersive login first-run** – curated demo identities with quick-fill actions model a secure enterprise launch experience.
+- **Rich data storytelling** – KPI cards, comparative trend lines, radial liquidity views, portfolio breakdowns, and account health tables rendered with Recharts.
+- **Responsive glassmorphism UI** – Tailwind CSS powers adaptive layouts, cinematic gradients, and glass panels tuned for large dashboard canvases.
+- **Synthetic yet coherent metrics** – dummy data is shaped to feel real: rolling revenue, net retention, automation coverage, and geographic momentum.
+
+## Technology Stack
+- [Next.js 16](https://nextjs.org/) with the App Router and React Server Components.
+- [TypeScript](https://www.typescriptlang.org/) for strict typing and maintainability.
+- [Tailwind CSS v4](https://tailwindcss.com/) for utility-first styling, radial gradients, and glassmorphic surfaces.
+- [Recharts](https://recharts.org/en-US/) for responsive charts (line, area, bar, radial, and pie compositions).
+- [Lucide Icons](https://lucide.dev/) for the executive UI iconography.
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
+# open http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+When the app launches you will land on the secure login view. Use any of the demo identities to authenticate:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Name | Role | Email | Password |
+| --- | --- | --- | --- |
+| Jordan Blake | Chief Strategy Officer | `executive@aurorafinance.com` | `Aurora#2025` |
+| Ava Chen | Chief Financial Officer | `cfo@aurorafinance.com` | `Liquidity!89` |
+| Noah Patel | Director of Operations | `opslead@aurorafinance.com` | `OpsPulse77` |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+After sign-in the dashboard reveals revenue pacing, liquidity coverage, retention momentum, pipeline concentration, product mix insights, and a strategic account table – all presented on a single scrolling canvas.
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+  app/
+    page.tsx         # Login gate and dashboard hand-off
+    layout.tsx       # Root metadata and font wiring
+    globals.css      # Tailwind and global theming
+  components/
+    login-form.tsx   # Executive login experience with demo identities
+    dashboard.tsx    # Full analytics surface with charts and data narratives
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
+- `pnpm dev` – start the local development server.
+- `pnpm lint` – run ESLint with the project rules.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Notes
+- All metrics and accounts are synthetic; no external services or real records are used.
+- The layout is responsive down to tablet sizes, but it shines on wide desktop canvases.
+- Extend the dummy data or plug in live APIs by swapping the const data blocks inside `components/dashboard.tsx`.
