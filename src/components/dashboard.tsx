@@ -309,7 +309,7 @@ export default function Dashboard({ user }: DashboardProps) {
         </section>
 
         <section className="grid grid-cols-1 gap-2.5 md:grid-cols-3">
-          <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-4">
+          <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-4" data-dribbble-card="working-capital">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Cash cycle</p>
@@ -378,7 +378,7 @@ export default function Dashboard({ user }: DashboardProps) {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-4">
+          <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-4" data-dribbble-card="coverage-mix">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Hedging</p>
@@ -527,7 +527,7 @@ export default function Dashboard({ user }: DashboardProps) {
         </section>
 
         <section className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-          <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-5 lg:p-6">
+          <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-5 lg:p-6" data-dribbble-card="pipeline">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-semibold text-white">Pipeline concentration</h3>
@@ -562,7 +562,7 @@ export default function Dashboard({ user }: DashboardProps) {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-5 lg:p-6">
+          <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-5 lg:p-6" data-dribbble-card="operating-rhythm">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-semibold text-white">Operating rhythm</h3>
