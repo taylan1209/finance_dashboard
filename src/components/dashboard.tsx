@@ -25,6 +25,7 @@ import {
   CircleDot,
   Download,
   Globe2,
+  Gauge,
   Layers,
   LineChart as LineChartIcon,
   Quote,
@@ -107,6 +108,43 @@ const liquidityPulse = [
   { name: "Marketable securities", value: 28, fill: "#60a5fa" },
   { name: "Short-term investments", value: 18, fill: "#818cf8" },
   { name: "Strategic reserves", value: 12, fill: "#f472b6" },
+];
+
+const workingCapitalEfficiency = [
+  { month: "Jan", dso: 52, dpo: 38, cashConversion: 14 },
+  { month: "Feb", dso: 51, dpo: 39, cashConversion: 12 },
+  { month: "Mar", dso: 50, dpo: 40, cashConversion: 10 },
+  { month: "Apr", dso: 48, dpo: 41, cashConversion: 7 },
+  { month: "May", dso: 47, dpo: 42, cashConversion: 5 },
+  { month: "Jun", dso: 46, dpo: 42, cashConversion: 4 },
+  { month: "Jul", dso: 45, dpo: 43, cashConversion: 2 },
+  { month: "Aug", dso: 44, dpo: 43, cashConversion: 1 },
+  { month: "Sep", dso: 43, dpo: 44, cashConversion: 0 },
+  { month: "Oct", dso: 42, dpo: 44, cashConversion: -2 },
+  { month: "Nov", dso: 41, dpo: 45, cashConversion: -4 },
+  { month: "Dec", dso: 40, dpo: 46, cashConversion: -6 },
+];
+
+const forecastAccuracy = [
+  { month: "Jan", accuracy: 92 },
+  { month: "Feb", accuracy: 93 },
+  { month: "Mar", accuracy: 94 },
+  { month: "Apr", accuracy: 95 },
+  { month: "May", accuracy: 95.5 },
+  { month: "Jun", accuracy: 96 },
+  { month: "Jul", accuracy: 96.4 },
+  { month: "Aug", accuracy: 96.9 },
+  { month: "Sep", accuracy: 97.2 },
+  { month: "Oct", accuracy: 97.6 },
+  { month: "Nov", accuracy: 98.1 },
+  { month: "Dec", accuracy: 98.4 },
+];
+
+const hedgeMix = [
+  { name: "FX forwards", value: 38, fill: "#22d3ee" },
+  { name: "Commodities", value: 24, fill: "#38bdf8" },
+  { name: "Interest swaps", value: 28, fill: "#818cf8" },
+  { name: "Options", value: 10, fill: "#f472b6" },
 ];
 
 const retentionMomentum = [
@@ -203,6 +241,12 @@ export default function Dashboard({ user }: DashboardProps) {
   const topAllocation = liquidityPulse.reduce((prev, entry) => (entry.value > prev.value ? entry : prev), liquidityPulse[0]);
   const totalFundingShare = fundingComposition.reduce((acc, item) => acc + item.value, 0);
   const leadFundingSource = fundingComposition.reduce((prev, entry) => (entry.value > prev.value ? entry : prev), fundingComposition[0]);
+  const latestCashConversion = workingCapitalEfficiency[workingCapitalEfficiency.length - 1].cashConversion;
+  const baselineCashConversion = workingCapitalEfficiency[0].cashConversion;
+  const cashConversionDelta = baselineCashConversion - latestCashConversion;
+  const latestForecastAccuracy = forecastAccuracy[forecastAccuracy.length - 1].accuracy;
+  const forecastAccuracyLift = latestForecastAccuracy - forecastAccuracy[0].accuracy;
+  const topHedge = hedgeMix.reduce((prev, entry) => (entry.value > prev.value ? entry : prev), hedgeMix[0]);
 
   return (
     <div className="flex min-h-screen flex-col text-slate-100">
@@ -245,8 +289,8 @@ export default function Dashboard({ user }: DashboardProps) {
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-8 px-6 py-10">
-        <section className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-3 px-6 py-10">
+        <section className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           {kpiHighlights.map((kpi) => (
             <div
               key={kpi.label}
@@ -264,27 +308,271 @@ export default function Dashboard({ user }: DashboardProps) {
           ))}
         </section>
 
-        <section className="grid grid-cols-1 gap-5 xl:grid-cols-5">
-          <div className="col-span-3 self-start rounded-3xl border border-white/10 bg-slate-950/70 p-5 lg:p-6">
-            <div className="flex items-center justify-between">
+        <section className="grid grid-cols-1 gap-2.5 md:grid-cols-3">
+          <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-4">
+            <div className="flex items-start justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-white">Revenue & profitability pace</h2>
-                <p className="text-sm text-slate-400">Rolling 12-month view in millions (USD).</p>
+                <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Cash cycle</p>
+                <h3 className="mt-1 text-sm font-semibold text-white">Working capital velocity</h3>
               </div>
-              <button className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1 text-xs text-slate-300">
-                Export
-                <Download className="h-3.5 w-3.5" />
-              </button>
+              <Gauge className="h-4 w-4 text-emerald-300" />
             </div>
-            <div className="mt-5 h-72 lg:h-60">
+            <div className="mt-3 text-2xl font-semibold text-white">
+              {Math.abs(latestCashConversion).toFixed(0)}
+              <span className="ml-1 text-sm text-slate-400">days</span>
+            </div>
+            <p className="text-xs text-emerald-200">+{cashConversionDelta.toFixed(1)}d faster vs Jan</p>
+            <div className="mt-4 h-28">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={revenuePerformance} margin={{ top: 20, right: 24, left: 0, bottom: 12 }}>
+                <LineChart data={workingCapitalEfficiency} margin={{ top: 4, right: 8, left: -12, bottom: 0 }}>
+                  <XAxis dataKey="month" hide />
+                  <YAxis hide domain={[-10, 20]} />
+                  <Tooltip
+                    contentStyle={{
+                      background: "#020617",
+                      borderRadius: 12,
+                      border: "1px solid rgba(148,163,184,0.2)",
+                      color: "#e2e8f0",
+                    }}
+                    formatter={(value: number) => [`${value}d`, "Cash conversion"]}
+                  />
+                  <Line type="monotone" dataKey="cashConversion" stroke="#2dd4bf" strokeWidth={2.2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Forecast</p>
+                <h3 className="mt-1 text-sm font-semibold text-white">Revenue accuracy</h3>
+              </div>
+              <TrendingUp className="h-4 w-4 text-cyan-300" />
+            </div>
+            <div className="mt-3 text-2xl font-semibold text-white">{latestForecastAccuracy.toFixed(1)}%</div>
+            <p className="text-xs text-cyan-200">+{forecastAccuracyLift.toFixed(1)} pts YoY lift</p>
+            <div className="mt-4 h-28">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={forecastAccuracy} margin={{ top: 4, right: 8, left: -12, bottom: 0 }}>
                   <defs>
-                    <linearGradient id="gradientRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#22d3ee" stopOpacity={0} />
+                    <linearGradient id="gradientForecastAccuracy" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.45} />
+                      <stop offset="95%" stopColor="#38bdf8" stopOpacity={0} />
                     </linearGradient>
                   </defs>
+                  <XAxis dataKey="month" hide />
+                  <YAxis hide domain={[90, 100]} />
+                  <Tooltip
+                    contentStyle={{
+                      background: "#020617",
+                      borderRadius: 12,
+                      border: "1px solid rgba(148,163,184,0.2)",
+                      color: "#e2e8f0",
+                    }}
+                    formatter={(value: number) => [`${value}%`, "Accuracy"]}
+                  />
+                  <Area type="monotone" dataKey="accuracy" stroke="#38bdf8" strokeWidth={2} fill="url(#gradientForecastAccuracy)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Hedging</p>
+                <h3 className="mt-1 text-sm font-semibold text-white">Coverage mix</h3>
+              </div>
+              <Sparkles className="h-4 w-4 text-violet-300" />
+            </div>
+            <div className="mt-3 text-2xl font-semibold text-white">
+              {topHedge.value}%
+              <span className="ml-1 text-sm text-slate-400">lead share</span>
+            </div>
+            <p className="text-xs text-slate-300">{topHedge.name}</p>
+            <div className="mt-4 h-28">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={hedgeMix}
+                    dataKey="value"
+                    innerRadius={24}
+                    outerRadius={40}
+                    paddingAngle={6}
+                    cornerRadius={12}
+                    strokeWidth={2}
+                  >
+                    {hedgeMix.map((entry) => (
+                      <Cell key={entry.name} fill={entry.fill} stroke={entry.fill} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    cursor={{ fill: "rgba(148, 163, 184, 0.08)" }}
+                    contentStyle={{
+                      background: "#020617",
+                      borderRadius: 12,
+                      border: "1px solid rgba(148,163,184,0.2)",
+                      color: "#e2e8f0",
+                    }}
+                    formatter={(value: number, label: string) => [`${value}%`, label]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </section>
+
+
+        <section className="grid grid-cols-1 gap-3">
+          <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-5 lg:p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-white">Liquidity coverage</h3>
+                <p className="text-xs text-slate-400">Composition of deployable capital.</p>
+              </div>
+              <Activity className="h-5 w-5 text-cyan-300" />
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="relative h-64 rounded-3xl border border-white/5 bg-gradient-to-br from-slate-900/60 via-slate-950 to-slate-950/80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <defs>
+                      <filter id="liquidityGlow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
+                        <feMerge>
+                          <feMergeNode in="blur" />
+                          <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                      </filter>
+                      {liquidityPulse.map((entry, index) => (
+                        <linearGradient key={entry.name} id={`liquidityGradient-${index}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor={entry.fill} stopOpacity={0.85} />
+                          <stop offset="65%" stopColor={entry.fill} stopOpacity={0.55} />
+                          <stop offset="100%" stopColor={entry.fill} stopOpacity={0.25} />
+                        </linearGradient>
+                      ))}
+                    </defs>
+                    <Pie
+                      data={liquidityPulse}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius="58%"
+                      outerRadius="90%"
+                      startAngle={90}
+                      endAngle={-270}
+                      paddingAngle={6}
+                      cornerRadius={18}
+                      strokeWidth={3}
+                    >
+                      {liquidityPulse.map((entry, index) => (
+                        <Cell
+                          key={entry.name}
+                          fill={`url(#liquidityGradient-${index})`}
+                          stroke={entry.fill}
+                          filter="url(#liquidityGlow)"
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      cursor={{ fill: "rgba(148, 163, 184, 0.08)" }}
+                      contentStyle={{
+                        background: "#020617",
+                        borderRadius: 16,
+                        border: "1px solid rgba(148,163,184,0.2)",
+                        color: "#e2e8f0",
+                      }}
+                      formatter={(value: number, label: string) => [`${value}%`, label]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <span className="text-[11px] uppercase tracking-[0.35em] text-slate-400">Coverage</span>
+                  <span className="mt-1.5 text-4xl font-semibold text-white">{totalLiquidity}%</span>
+                  <span className="mt-1 text-sm text-slate-300">{topAllocation.name}</span>
+                  <span className="text-xs text-slate-500">{topAllocation.value}% lead allocation</span>
+                </div>
+              </div>
+              <div className="grid content-center gap-1.5 rounded-3xl border border-white/5 bg-white/5 px-4 py-4 backdrop-blur">
+                {liquidityPulse.map((item) => (
+                  <div key={item.name} className="flex items-center justify-between text-sm text-slate-100">
+                    <div className="flex items-center gap-3">
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: item.fill }} />
+                      <span>{item.name}</span>
+                    </div>
+                    <span className="text-cyan-200">{item.value}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-white">Executive insights</h3>
+                <p className="text-xs text-slate-400">Signals curated by Aurora Intelligence.</p>
+              </div>
+              <Sparkles className="h-5 w-5 text-violet-300" />
+            </div>
+            <ul className="mt-4 space-y-2.5 text-sm text-slate-200">
+              {insightBullets.map((insight) => (
+                <li key={insight} className="flex gap-3 rounded-2xl border border-white/5 bg-white/5 px-4 py-3">
+                  <CheckCircle2 className="h-4 w-4 flex-none text-emerald-300" />
+                  {insight}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+          <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-5 lg:p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-white">Pipeline concentration</h3>
+                <p className="text-xs text-slate-400">Active deals by stage (USD).</p>
+              </div>
+              <TrendingUp className="h-5 w-5 text-emerald-300" />
+            </div>
+            <div className="mt-4 h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={pipelineHealth} margin={{ top: 12, right: 16, left: -6, bottom: 0 }}>
+                  <CartesianGrid stroke="rgba(148, 163, 184, 0.18)" vertical={false} />
+                  <XAxis dataKey="stage" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis
+                    stroke="#94a3b8"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    unit="M"
+                    domain={["dataMin - 2", "dataMax + 2"]}
+                  />
+                  <Tooltip contentStyle={{ background: "#020617", borderRadius: 16, border: "1px solid rgba(148,163,184,0.2)", color: "#e2e8f0" }} />
+                  <Legend wrapperStyle={{ color: "#cbd5f5" }} />
+                  <Bar dataKey="value" radius={[12, 12, 4, 4]}>
+                    <Cell fill="#22d3ee" />
+                    <Cell fill="#38bdf8" />
+                    <Cell fill="#818cf8" />
+                    <Cell fill="#c084fc" />
+                    <Cell fill="#f472b6" />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-5 lg:p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-white">Operating rhythm</h3>
+                <p className="text-xs text-slate-400">Automation coverage vs incidents.</p>
+              </div>
+              <Activity className="h-5 w-5 text-sky-300" />
+            </div>
+            <div className="mt-4 h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={operationalRhythm} margin={{ top: 16, right: 20, left: -4, bottom: 0 }}>
                   <CartesianGrid stroke="rgba(148, 163, 184, 0.18)" vertical={false} />
                   <XAxis dataKey="month" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis
@@ -292,227 +580,20 @@ export default function Dashboard({ user }: DashboardProps) {
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(value) => `${value}M`}
-                    domain={["dataMin - 1", "dataMax + 1"]}
+                    domain={["dataMin - 5", "dataMax + 5"]}
                   />
                   <Tooltip contentStyle={{ background: "#020617", borderRadius: 16, border: "1px solid rgba(148,163,184,0.2)", color: "#e2e8f0" }} />
                   <Legend wrapperStyle={{ color: "#cbd5f5" }} />
-                  <Area type="monotone" dataKey="revenue" stroke="#22d3ee" fill="url(#gradientRevenue)" strokeWidth={2.5} />
-                  <Line type="monotone" dataKey="forecast" stroke="#818cf8" strokeWidth={2} strokeDasharray="6 6" dot={false} />
-                  <Line type="monotone" dataKey="expenses" stroke="#f472b6" strokeWidth={1.8} dot={false} />
+                  <Line type="monotone" dataKey="automation" stroke="#22d3ee" strokeWidth={2.3} dot={false} />
+                  <Line type="monotone" dataKey="incidents" stroke="#f472b6" strokeWidth={2} dot={{ strokeWidth: 2 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
-
-          <div className="col-span-2 space-y-5">
-            <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-5 lg:p-6">
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-semibold text-white">Liquidity coverage</h3>
-                  <p className="text-xs text-slate-400">Composition of deployable capital.</p>
-                </div>
-                <Activity className="h-5 w-5 text-cyan-300" />
-              </div>
-              <div className="mt-5 space-y-5">
-                <div className="relative h-60 rounded-3xl border border-white/5 bg-gradient-to-br from-slate-900/60 via-slate-950 to-slate-950/80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <defs>
-                        <filter id="liquidityGlow" x="-50%" y="-50%" width="200%" height="200%">
-                          <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
-                          <feMerge>
-                            <feMergeNode in="blur" />
-                            <feMergeNode in="SourceGraphic" />
-                          </feMerge>
-                        </filter>
-                        {liquidityPulse.map((entry, index) => (
-                          <linearGradient key={entry.name} id={`liquidityGradient-${index}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stopColor={entry.fill} stopOpacity={0.85} />
-                            <stop offset="65%" stopColor={entry.fill} stopOpacity={0.55} />
-                            <stop offset="100%" stopColor={entry.fill} stopOpacity={0.25} />
-                          </linearGradient>
-                        ))}
-                      </defs>
-                      <Pie
-                        data={liquidityPulse}
-                        dataKey="value"
-                        nameKey="name"
-                        innerRadius="58%"
-                        outerRadius="90%"
-                        startAngle={90}
-                        endAngle={-270}
-                        paddingAngle={6}
-                        cornerRadius={18}
-                        strokeWidth={3}
-                      >
-                        {liquidityPulse.map((entry, index) => (
-                          <Cell
-                            key={entry.name}
-                            fill={`url(#liquidityGradient-${index})`}
-                            stroke={entry.fill}
-                            filter="url(#liquidityGlow)"
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        cursor={{ fill: "rgba(148, 163, 184, 0.08)" }}
-                        contentStyle={{
-                          background: "#020617",
-                          borderRadius: 16,
-                          border: "1px solid rgba(148,163,184,0.2)",
-                          color: "#e2e8f0",
-                        }}
-                        formatter={(value: number, label: string) => [`${value}%`, label]}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-                    <span className="text-[11px] uppercase tracking-[0.35em] text-slate-400">Coverage</span>
-                    <span className="mt-1.5 text-4xl font-semibold text-white">{totalLiquidity}%</span>
-                    <span className="mt-1 text-sm text-slate-300">{topAllocation.name}</span>
-                    <span className="text-xs text-slate-500">{topAllocation.value}% lead allocation</span>
-                  </div>
-                </div>
-                <div className="grid gap-2.5 text-sm text-slate-100">
-                  {liquidityPulse.map((item) => (
-                    <div key={item.name} className="flex items-center justify-between rounded-2xl border border-white/5 bg-white/5 px-4 py-3 backdrop-blur">
-                      <div className="flex items-center gap-3">
-                        <span className="h-2.5 w-2.5 rounded-full" style={{ background: item.fill }} />
-                        <span>{item.name}</span>
-                      </div>
-                      <span className="text-cyan-200">{item.value}%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-semibold text-white">Executive insights</h3>
-                  <p className="text-xs text-slate-400">Signals curated by Aurora Intelligence.</p>
-                </div>
-                <Sparkles className="h-5 w-5 text-violet-300" />
-              </div>
-              <ul className="mt-4 space-y-3 text-sm text-slate-200">
-                {insightBullets.map((insight) => (
-                  <li key={insight} className="flex gap-3 rounded-2xl border border-white/5 bg-white/5 px-4 py-3">
-                    <CheckCircle2 className="h-4 w-4 flex-none text-emerald-300" />
-                    {insight}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
         </section>
 
-        <section className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-          <div className="col-span-3 self-start rounded-3xl border border-white/10 bg-slate-950/70 p-5 lg:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-semibold text-white">Customer retention momentum</h3>
-                <p className="text-xs text-slate-400">Net retention vs expansion revenue.</p>
-              </div>
-              <Users className="h-5 w-5 text-cyan-300" />
-            </div>
-            <div className="mt-5 h-64 lg:h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={retentionMomentum} margin={{ top: 20, right: 24, left: 0, bottom: 4 }}>
-                  <defs>
-                    <linearGradient id="gradientRetention" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#38bdf8" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid stroke="rgba(148, 163, 184, 0.18)" vertical={false} />
-                  <XAxis dataKey="quarter" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis
-                    stroke="#94a3b8"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                    unit="%"
-                    domain={["dataMin - 2", "dataMax + 2"]}
-                  />
-                  <Tooltip contentStyle={{ background: "#020617", borderRadius: 16, border: "1px solid rgba(148,163,184,0.2)", color: "#e2e8f0" }} />
-                  <Legend wrapperStyle={{ color: "#cbd5f5" }} />
-                  <Area type="monotone" dataKey="retention" stroke="#38bdf8" strokeWidth={2.4} fill="url(#gradientRetention)" />
-                  <Line type="monotone" dataKey="expansion" stroke="#facc15" strokeWidth={2} dot={{ strokeWidth: 2 }} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="col-span-2 space-y-5">
-            <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-5 lg:p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-semibold text-white">Pipeline concentration</h3>
-                  <p className="text-xs text-slate-400">Active deals by stage (USD).</p>
-                </div>
-                <TrendingUp className="h-5 w-5 text-emerald-300" />
-              </div>
-              <div className="mt-5 h-60 lg:h-52">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={pipelineHealth} margin={{ top: 12, right: 16, left: -6, bottom: 0 }}>
-                    <CartesianGrid stroke="rgba(148, 163, 184, 0.18)" vertical={false} />
-                    <XAxis dataKey="stage" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis
-                      stroke="#94a3b8"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                      unit="M"
-                      domain={["dataMin - 2", "dataMax + 2"]}
-                    />
-                    <Tooltip contentStyle={{ background: "#020617", borderRadius: 16, border: "1px solid rgba(148,163,184,0.2)", color: "#e2e8f0" }} />
-                    <Bar dataKey="value" radius={[12, 12, 4, 4]}>
-                      <Cell fill="#22d3ee" />
-                      <Cell fill="#38bdf8" />
-                      <Cell fill="#818cf8" />
-                      <Cell fill="#c084fc" />
-                      <Cell fill="#f472b6" />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-5 lg:p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-semibold text-white">Operating rhythm</h3>
-                  <p className="text-xs text-slate-400">Automation coverage vs incidents.</p>
-                </div>
-                <Activity className="h-5 w-5 text-sky-300" />
-              </div>
-              <div className="mt-5 h-60 lg:h-52">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={operationalRhythm} margin={{ top: 16, right: 20, left: -4, bottom: 0 }}>
-                    <CartesianGrid stroke="rgba(148, 163, 184, 0.18)" vertical={false} />
-                    <XAxis dataKey="month" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis
-                      stroke="#94a3b8"
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                      domain={["dataMin - 5", "dataMax + 5"]}
-                    />
-                    <Tooltip contentStyle={{ background: "#020617", borderRadius: 16, border: "1px solid rgba(148,163,184,0.2)", color: "#e2e8f0" }} />
-                    <Legend wrapperStyle={{ color: "#cbd5f5" }} />
-                    <Line type="monotone" dataKey="automation" stroke="#22d3ee" strokeWidth={2.3} dot={false} />
-                    <Line type="monotone" dataKey="incidents" stroke="#f472b6" strokeWidth={2} dot={{ strokeWidth: 2 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="grid grid-cols-1 gap-5 xl:grid-cols-5">
-          <div className="col-span-3 self-start rounded-3xl border border-white/10 bg-slate-950/70 p-5 lg:p-6">
+        <section className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+          <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-5 lg:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-semibold text-white">Product portfolio mix</h3>
@@ -520,9 +601,9 @@ export default function Dashboard({ user }: DashboardProps) {
               </div>
               <CircleDot className="h-5 w-5 text-violet-200" />
             </div>
-            <div className="mt-5 h-60 lg:h-56">
+            <div className="mt-3.5 h-60">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={productMix} barCategoryGap={24} margin={{ top: 16, right: 24, left: 0, bottom: 4 }}>
+                <BarChart data={productMix} barCategoryGap={20} margin={{ top: 12, right: 16, left: -4, bottom: 0 }}>
                   <CartesianGrid stroke="rgba(148, 163, 184, 0.18)" vertical={false} />
                   <XAxis dataKey="product" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis
@@ -535,14 +616,14 @@ export default function Dashboard({ user }: DashboardProps) {
                   />
                   <Tooltip contentStyle={{ background: "#020617", borderRadius: 16, border: "1px solid rgba(148,163,184,0.2)", color: "#e2e8f0" }} />
                   <Legend wrapperStyle={{ color: "#cbd5f5" }} />
-                  <Bar dataKey="actual" radius={[14, 14, 4, 4]} fill="#38bdf8" />
-                  <Bar dataKey="target" radius={[14, 14, 4, 4]} fill="#818cf8" />
+                  <Bar dataKey="actual" radius={[12, 12, 4, 4]} fill="#38bdf8" />
+                  <Bar dataKey="target" radius={[12, 12, 4, 4]} fill="#818cf8" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="col-span-2 rounded-3xl border border-white/10 bg-slate-950/70 p-5 lg:p-6">
+          <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-5 lg:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-semibold text-white">Global footprint</h3>
@@ -550,7 +631,7 @@ export default function Dashboard({ user }: DashboardProps) {
               </div>
               <Globe2 className="h-5 w-5 text-cyan-300" />
             </div>
-            <div className="mt-5 h-60 lg:h-56">
+            <div className="mt-3.5 h-58">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Tooltip
@@ -567,8 +648,8 @@ export default function Dashboard({ user }: DashboardProps) {
                     data={geographicPerformance}
                     dataKey="revenue"
                     nameKey="region"
-                    innerRadius={70}
-                    outerRadius={110}
+                    innerRadius={68}
+                    outerRadius={108}
                     cornerRadius={12}
                     paddingAngle={4}
                   >
@@ -580,7 +661,7 @@ export default function Dashboard({ user }: DashboardProps) {
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <ul className="mt-2.5 space-y-1.5 text-xs text-slate-300">
+            <ul className="mt-2 space-y-1.5 text-xs text-slate-300">
               {geographicPerformance.map((region) => (
                 <li key={region.region} className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2">
                   <span>{region.region}</span>
@@ -591,7 +672,7 @@ export default function Dashboard({ user }: DashboardProps) {
           </div>
         </section>
 
-        <section className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+        <section className="grid grid-cols-1 gap-3 xl:grid-cols-3">
           <div className="self-start rounded-3xl border border-white/10 bg-slate-950/70 p-5 lg:p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -600,7 +681,7 @@ export default function Dashboard({ user }: DashboardProps) {
               </div>
               <ShieldCheck className="h-5 w-5 text-emerald-300" />
             </div>
-            <div className="relative mt-5 h-56">
+            <div className="relative mt-4 h-54">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={runwayOutlook} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
                   <defs>
@@ -633,7 +714,7 @@ export default function Dashboard({ user }: DashboardProps) {
                 </AreaChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-4 flex flex-wrap gap-3 text-xs text-slate-300">
+            <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-300">
               <span className="inline-flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-300" /> Baseline stability
               </span>
@@ -651,7 +732,7 @@ export default function Dashboard({ user }: DashboardProps) {
               </div>
               <Layers className="h-5 w-5 text-cyan-300" />
             </div>
-            <div className="mt-5 h-56">
+            <div className="mt-4 h-54">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <defs>
@@ -697,7 +778,7 @@ export default function Dashboard({ user }: DashboardProps) {
                 </div>
               </div>
             </div>
-            <div className="mt-5 grid gap-2.5 text-xs text-slate-300">
+            <div className="mt-4 grid gap-2 text-xs text-slate-300">
               {fundingComposition.map((source) => (
                 <div key={source.name} className="flex items-center justify-between rounded-2xl border border-white/5 bg-white/5 px-4 py-2">
                   <span>{source.name}</span>
@@ -715,7 +796,7 @@ export default function Dashboard({ user }: DashboardProps) {
               </div>
               <Activity className="h-5 w-5 text-violet-300" />
             </div>
-            <div className="mt-5 h-56">
+            <div className="mt-4 h-54">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={riskMitigation} layout="vertical" margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
                   <defs>
@@ -757,7 +838,7 @@ export default function Dashboard({ user }: DashboardProps) {
               <Activity className="h-4 w-4 text-emerald-300" /> Last synced 2 minutes ago
             </div>
           </div>
-          <div className="mt-5 overflow-x-auto">
+          <div className="mt-4 overflow-x-auto">
             <table className="min-w-full divide-y divide-white/10 text-sm">
               <thead className="text-left text-xs uppercase tracking-[0.2em] text-slate-400">
                 <tr>
@@ -795,7 +876,7 @@ export default function Dashboard({ user }: DashboardProps) {
               <Quote className="h-4 w-4 text-cyan-300" /> Curated testimonials
             </div>
           </div>
-          <div className="mt-6 grid gap-5 md:grid-cols-3">
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
             {testimonials.map((story) => (
               <article key={story.name} className="flex h-full flex-col gap-4 rounded-2xl border border-white/5 bg-white/[0.06] p-6">
                 <div className="flex items-center gap-3">
@@ -820,7 +901,7 @@ export default function Dashboard({ user }: DashboardProps) {
           </div>
         </section>
 
-        <footer className="mt-8 grid gap-5 rounded-3xl border border-white/10 bg-slate-950/80 p-6 text-sm text-slate-300 lg:grid-cols-3 lg:p-8">
+        <footer className="mt-6 grid gap-4 rounded-3xl border border-white/10 bg-slate-950/80 p-6 text-sm text-slate-300 lg:grid-cols-3 lg:p-8">
           <div className="space-y-3">
             <div className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-1 text-xs text-cyan-200">
               <LineChartIcon className="h-4 w-4" /> Aurora Finance
