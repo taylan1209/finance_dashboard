@@ -53,7 +53,7 @@ src/
 
 ### Creating Dribbble-ready imagery
 1. Start the app locally with `pnpm dev` so it is available at `http://localhost:3000` (or supply `APP_URL`).
-2. Run `pnpm dribbble:capture`. Puppeteer signs in with the executive demo account, captures a full-page screenshot, and slices it into four equal segments saved under `dribbble-assets/screenshots/`.
+2. Run `pnpm dribbble:capture`. Puppeteer signs in with the executive demo account, captures a full-page screenshot, and slices it into four section-aware segments saved under `dribbble-assets/screenshots/`.
 3. The script also outputs `dribbble-assets/dribbble-collage.png`, a 2×2 collage with soft framing that mirrors the reference layout—ready to share or tweak further.
 
 ## Notes

@@ -4,9 +4,9 @@
  * Automated Dribbble asset generator.
  *
  * 1. Boots the Aurora Finance experience, signs in with the executive demo user, and
- *    captures a full-page screenshot of the dashboard using Puppeteer.
- * 2. Splits the screenshot into four equal-height segments and composes them into a 2x2 collage
- *    with soft framing using Sharp—matching the Dribbble reference layout.
+ *    captures a high-resolution full-page screenshot of the dashboard using Puppeteer.
+ * 2. Dynamically groups contiguous sections so charts are not cut in half, slices four segments,
+ *    and composes them into a 2x2 collage with soft framing using Sharp—matching the Dribbble reference layout.
  *
  * The script expects the application to be running (default: http://localhost:3000).
  *
@@ -102,34 +102,131 @@ async function capturePageSegments(page) {
     throw new Error("Unable to determine dimensions for the full-page screenshot.");
   }
 
-  const segmentHeight = Math.floor(height / SEGMENT_COUNT);
-  const segments = [];
+  const { sections, pageHeight } = await page.evaluate(() => {
+    const pad = 36;
+    const result = [];
+    const header = document.querySelector("header");
+    if (header) {
+      const rect = header.getBoundingClientRect();
+      const top = Math.max(0, window.scrollY + rect.top - pad);
+      const bottom = window.scrollY + rect.bottom + pad;
+      result.push({
+        top,
+        bottom,
+        height: bottom - top,
+      });
+    }
 
-  let currentTop = 0;
-  for (let index = 0; index < SEGMENT_COUNT; index += 1) {
-    const remainingHeight = height - currentTop;
-    const sliceHeight = index === SEGMENT_COUNT - 1 ? remainingHeight : segmentHeight;
+    document.querySelectorAll("main > section").forEach((section) => {
+      const rect = section.getBoundingClientRect();
+      const top = Math.max(0, window.scrollY + rect.top - pad);
+      const bottom = window.scrollY + rect.bottom + pad;
+      result.push({
+        top,
+        bottom,
+        height: bottom - top,
+      });
+    });
+
+    return {
+      sections: result,
+      pageHeight: document.body.scrollHeight,
+    };
+  });
+
+  if (!sections.length) {
+    throw new Error("Failed to derive section metrics for segmentation.");
+  }
+
+  const heights = sections.map((section) => section.height);
+  const prefix = [0];
+  for (const h of heights) {
+    prefix.push(prefix[prefix.length - 1] + h);
+  }
+  const targetHeight = prefix[prefix.length - 1] / SEGMENT_COUNT;
+
+  const dp = Array.from({ length: SEGMENT_COUNT + 1 }, () =>
+    Array(sections.length + 1).fill(Number.POSITIVE_INFINITY),
+  );
+  const cut = Array.from({ length: SEGMENT_COUNT + 1 }, () =>
+    Array(sections.length + 1).fill(-1),
+  );
+  dp[0][0] = 0;
+
+  for (let group = 1; group <= SEGMENT_COUNT; group += 1) {
+    for (let end = group; end <= sections.length; end += 1) {
+      for (let start = group - 1; start <= end - 1; start += 1) {
+        const groupHeight = prefix[end] - prefix[start];
+        const cost = Math.pow(groupHeight - targetHeight, 2);
+        const candidate = dp[group - 1][start] + cost;
+        if (candidate < dp[group][end]) {
+          dp[group][end] = candidate;
+          cut[group][end] = start;
+        }
+      }
+    }
+  }
+
+  if (!Number.isFinite(dp[SEGMENT_COUNT][sections.length])) {
+    throw new Error("Failed to compute section partition for collage slicing.");
+  }
+
+  const boundaries = [];
+  let end = sections.length;
+  for (let group = SEGMENT_COUNT; group >= 1; group -= 1) {
+    const start = cut[group][end];
+    if (start < 0) {
+      throw new Error("Invalid partition state during backtracking.");
+    }
+    boundaries.push({ start, end });
+    end = start;
+  }
+  boundaries.reverse();
+
+  const groups = boundaries.map(({ start, end: endIndex }) => ({
+    top: sections[start].top,
+    bottom: sections[endIndex - 1].bottom,
+  }));
+
+  const scaleY = height / pageHeight;
+  const segments = groups.map((group, index) => {
+    const padTop = index === 0 ? 180 : 110;
+    const padBottom = index === SEGMENT_COUNT - 1 ? 180 : 110;
+    const cssTop = Math.max(0, group.top - padTop);
+    const cssBottom = Math.min(pageHeight, group.bottom + padBottom);
+    const cssHeight = cssBottom - cssTop;
+    const extractTop = Math.max(0, Math.floor(cssTop * scaleY));
+    const extractHeight = Math.max(
+      1,
+      Math.min(
+        height - extractTop,
+        Math.ceil(cssHeight * scaleY),
+      ),
+    );
     const segmentPath = path.join(SCREENSHOT_DIR, `segment-${index + 1}.png`);
 
-    await baseImage
-      .clone()
-      .extract({
-        left: 0,
-        top: currentTop,
-        width,
-        height: sliceHeight,
-      })
-      .toFile(segmentPath);
-
-    segments.push({
+    return {
       path: segmentPath,
       index,
       row: Math.floor(index / 2),
       col: index % 2,
-    });
+      extract: {
+        left: 0,
+        top: extractTop,
+        width,
+        height: extractHeight,
+      },
+    };
+  });
 
-    currentTop += sliceHeight;
-  }
+  await Promise.all(
+    segments.map((segment) =>
+      baseImage
+        .clone()
+        .extract(segment.extract)
+        .toFile(segment.path),
+    ),
+  );
 
   return { segments, fullPagePath };
 }
@@ -169,10 +266,10 @@ async function createPanelShadow(width, height, radius, color) {
 
 async function createCollage(segments) {
   const panelWidth = 980;
-  const panelHeight = 720;
+  const panelHeight = 900;
   const panelRadius = 80;
   const panelPaddingX = 40;
-  const panelPaddingY = 60;
+  const panelPaddingY = 70;
   const gapX = 90;
   const gapY = 80;
   const marginX = 150;
@@ -193,7 +290,7 @@ async function createCollage(segments) {
   const composites = [];
   const shadowColor = { r: 14, g: 23, b: 42, alpha: 0.55 };
   const shadowOffset = { x: 20, y: 32 };
-  const panelColor = "#b9c8d0";
+  const panelColor = "#3a4851";
 
   for (const segment of segments) {
     const left = marginX + segment.col * (panelWidth + gapX);
@@ -211,25 +308,53 @@ async function createCollage(segments) {
       throw new Error(`Unable to read dimensions for ${segment.path}`);
     }
 
-    const maxInnerWidth = panelWidth - panelPaddingX * 2;
-    const maxInnerHeight = panelHeight - panelPaddingY * 2;
+    const innerWidth = panelWidth - panelPaddingX * 2;
+    const innerHeight = panelHeight - panelPaddingY * 2;
+    const desiredTopMargin = segment.index === 0 ? 80 : 50;
+    const desiredBottomMargin = segment.index === SEGMENT_COUNT - 1 ? 80 : 50;
+    const reservedMargin = desiredTopMargin + desiredBottomMargin;
+    const targetHeight = Math.max(320, innerHeight - reservedMargin);
 
     const resizedBuffer = await image
       .resize({
-        width: maxInnerWidth,
-        height: maxInnerHeight,
+        width: innerWidth,
+        height: targetHeight,
         fit: "inside",
         withoutEnlargement: true,
       })
       .png()
       .toBuffer();
 
-    const resizedMeta = await sharp(resizedBuffer).metadata();
-    const cardWidth = resizedMeta.width || maxInnerWidth;
-    const cardHeight = resizedMeta.height || maxInnerHeight;
+    const resizedMetaRaw = await sharp(resizedBuffer).metadata();
+    const actualHeight = resizedMetaRaw.height || targetHeight;
+    const availableSlack = Math.max(0, innerHeight - actualHeight);
+    let extraTop = 0;
+    let extraBottom = 0;
+    if (availableSlack > 0) {
+      const ratioTop =
+        reservedMargin > 0 ? desiredTopMargin / reservedMargin : 0.5;
+      extraTop = Math.round(availableSlack * ratioTop);
+      extraBottom = availableSlack - extraTop;
+    }
 
-    const cardLeft = left + panelPaddingX + Math.round((maxInnerWidth - cardWidth) / 2);
-    const cardTop = top + panelPaddingY + Math.round((maxInnerHeight - cardHeight) / 2);
+    const extendedBuffer = await sharp(resizedBuffer)
+      .extend({
+        top: extraTop,
+        bottom: extraBottom,
+        left: 0,
+        right: 0,
+        background: "#020617",
+      })
+      .toBuffer();
+
+    const resizedMeta = await sharp(extendedBuffer).metadata();
+    const cardWidth = resizedMeta.width || innerWidth;
+    const cardHeight = resizedMeta.height || innerHeight;
+
+    const horizontalOffset = Math.max(0, Math.round((innerWidth - cardWidth) / 2));
+    const verticalOffset = Math.max(0, Math.round((innerHeight - cardHeight) / 2));
+    const cardLeft = left + panelPaddingX + horizontalOffset;
+    const cardTop = top + panelPaddingY + verticalOffset;
 
     const cardShadow = await createPanelShadow(cardWidth + 22, cardHeight + 22, 42, {
       r: 15,
@@ -244,7 +369,7 @@ async function createCollage(segments) {
     });
 
     composites.push({
-      input: resizedBuffer,
+      input: extendedBuffer,
       left: cardLeft,
       top: cardTop,
     });
